@@ -1,7 +1,6 @@
 import discord
 import requests
 from discord.ext import commands, tasks
-from datetime import datetime
 
 bot = commands.Bot(command_prefix=['!buzz ', '!b '])
 bot.remove_command('help')  # have to remove so that I can put my own help command
@@ -120,4 +119,4 @@ async def cat(ctx):
         await ctx.reply("I could not understand this command. You may have entered too many arguments.")
 
 
-bot.run('ODQ1ODAyMzk5NDk1MDk0MzAy.YKmQ3g.04Sw1t9Z4mclo4j7aDgqYi2mLYE')
+bot.run('BOT TOKEN HERE')

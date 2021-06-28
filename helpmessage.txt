@@ -1,0 +1,7 @@
+BuzzBot can use two prefixes: "!buzz" and "!b" 
+**!buzz help** - Sends this help message 
+**!buzz emote X** - Use to search for and send X emote from FrankerFaceZ. Example: "!buzz emote YEP" 
+**!buzz dog** - Sends an image of a random dog 
+**!buzz dog_breed X** - Sends a random image of a dog of breed X. Example: "!buzz dog shiba" 
+**!buzz cat** - Sends an image of a random cat 
+**!buzz cat_breed X** - Sends a random image of a cat of breed X. Example: "!buzz cat bengal"

@@ -13,12 +13,10 @@ async def on_ready():
 
 @bot.command()
 async def help(ctx):
-    helpMsg = f'BuzzBot can use two prefixes: "!buzz" and "!b" \n**!buzz help** - Sends this help message \n**!buzz ' \
-              f'emote (emote)** - Use to search for and send an emote from FrankerFaceZ. Example: "!buzz emote YEP"' \
-              f' \n**!buzz dog** - Sends an image of a random dog \n**!buzz dog (breed)** - Sends a random image of a' \
-              f' specific dog breed . Example: "!buzz dog shiba" \n**!buzz cat** - Sends an image of a random cat' \
-              f' \n**!buzz cat (breed)** - Sends a random image of a specific cat breed. Example: "!buzz cat bengal"'
-    await ctx.send(helpMsg)
+    help_file = open('helpmessage.txt', 'r')
+    help_message = help_file.read()
+    help_file.close()
+    await ctx.send(help_message)
 
 
 @bot.command()
@@ -58,65 +56,83 @@ async def emote(ctx):
 async def dog(ctx):
     words = ctx.message.content.strip().split()
 
-    # checking if command wants a random dog or a specific breed
-    if len(words) == 2: # user wants random dog
+    # check to see if user inputted arguments past "(prefix) dog"
+    if len(words) == 2: # "(prefix) dog"
         r = requests.get("https://dog.ceo/api/breeds/image/random")
         data = r.json()
         if data["status"] == "success":
             await ctx.send(data["message"])
         else:   # api failed to get a random image
             await ctx.reply("Getting a random image of a dog failed. There may be issues with the API.")
-    elif len(words) == 3:   # user wants a specific breed of dog
-        breed = words[2]
+    else:   # user inputted too many arguments
+        await ctx.reply("I could not understand this command. You may have entered too many arguments.")
+
+
+@bot.command()
+async def dog_breed(ctx):
+    # first, need to check if the user actually entered a breed after the command
+    if len(ctx.message.content.strip()) == len(ctx.prefix) + len(ctx.invoked_with):
+        await ctx.reply("You did not enter a breed after your message.")
+    elif len(ctx.message.content) > 50:   # don't want to search for a dog breed too long on the api
+        await ctx.reply("Sorry, the dog breed you entered is too long.")
+    else:   # search for breed and send link to image if found
+        breed = ctx.message.content[len(ctx.prefix) + len(ctx.invoked_with):].strip()
         url = f"https://dog.ceo/api/breed/{breed}/images/random"
         r = requests.get(url)
         data = r.json()
         if data["status"] == "success":
             await ctx.send(data["message"])
         else:
-            await ctx.reply(f"Getting a random image of a **{breed}** failed. The breed **{breed}** may not be "
-                            f"supported.")
-    else:   # user inputted too many arguments
-        await ctx.reply("I could not understand this command. You may have entered too many arguments.")
+            await ctx.reply(f"Failed to get a random image of a **{breed}**. The breed **{breed}** may not be "
+                            f"supported by the API.")
 
 
 @bot.command()
 async def cat(ctx):
     words = ctx.message.content.strip().split()
 
-    # checking if command wants a random cat or a specific breed
-    if len(words) == 2: # user wants a random cat
+    # check to see if user inputted arguments past "(prefix) cat"
+    if len(words) == 2: # get a random picture of a cat and send in same channel
         r = requests.get("https://api.thecatapi.com/v1/images/search")
         data = r.json()
         if "url" in data[0]:
             await ctx.send(data[0]["url"])
         else:   # failed to get a random image
             await ctx.reply("Failed to get a random image of a cat")
-    elif len(words) == 3:   # user wants a specific breed
+    else: # user inputted too many arguments
+        await ctx.reply("I could not understand this command. You may have entered too many arguments.")
+
+
+@bot.command()
+async def cat_breed(ctx):
+    # first, need to check if the user actually entered a breed after the command
+    if len(ctx.message.content.strip()) == len(ctx.prefix) + len(ctx.invoked_with):
+        await ctx.reply("You did not enter a breed after your message.")
+    elif len(ctx.message.content) > 50:   # don't want to search for a cat breed too long on the api
+        await ctx.reply("Sorry, the cat breed you entered is too long.")
+    else:
         # searching for the breed and getting its breed_id
-        breed = words[2]
+        breed = ctx.message.content[len(ctx.prefix) + len(ctx.invoked_with):].strip()
         url = f"https://api.thecatapi.com/v1/breeds/search?q={breed}"
         r = requests.get(url)
         data = r.json()
 
         # checking if breed could be found
-        if len(data) > 0:   # breed exists, get an image of it
+        if len(data) > 0:  # cat breed exists, get breed id then get image of breed
             breed_id = data[0]["id"]
             new_url = f"https://api.thecatapi.com/v1/images/search?breed_id={breed_id}"
             r = requests.get(new_url)
             data = r.json()
 
             # checking if searching for the breed_id returned an image
-            if len(data) > 0:   # call returned information about the breed
+            if len(data) > 0:  # call returned information about the breed
                 await ctx.send(data[0]["url"])
-            else:   # call did not return info about the breed
+            else:  # call did not return info about the breed
                 await ctx.reply(f"Failed to get a random image of a **{breed}**. The breed **{breed}** may not be "
                                 f"supported.")
         else:   # breed could not be found
             await ctx.reply(f"Failed to get a random image of a **{breed}**. The breed **{breed}** may not be "
                             f"supported.")
-    else: # user inputted too many arguments
-        await ctx.reply("I could not understand this command. You may have entered too many arguments.")
 
 
 bot.run('BOT TOKEN HERE')

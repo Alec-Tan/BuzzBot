@@ -1,7 +1,13 @@
 BuzzBot can use two prefixes: "!buzz" and "!b" 
 **!buzz help** - Sends this help message 
-**!buzz emote X** - Use to search for and send X emote from FrankerFaceZ. Example: "!buzz emote YEP" 
+**!buzz emote X** - Use to search for and send X emote from FrankerFaceZ. This does not support gif emotes. Example: "!buzz emote YEP" 
 **!buzz dog** - Sends an image of a random dog 
 **!buzz dog_breed X** - Sends a random image of a dog of breed X. Example: "!buzz dog shiba" 
 **!buzz cat** - Sends an image of a random cat 
 **!buzz cat_breed X** - Sends a random image of a cat of breed X. Example: "!buzz cat bengal"
+**!buzz set_birthday_channel X** - Sets the current server's birthday channel to X. This is where birthday messages will be sent. Make sure to properly mention the channel. Example: "!b set_birthday_channel #birthdays"
+**!buzz birthday_channel** - Sends the current birthday channel set for this server. Example: "!buzz birthday_channel"
+**!buzz remove_birthday_channel** - Removes the current birthday channel set for this server. Example: "!buzz remove_birthday_channel"
+**!buzz set_birthday DATE** - Sets your birthday for this server. Examples: "!b set_birthday 5/23" or "!b set_birthday may 23"
+**!buzz birthday** - Sends your current birthday set for this server. Example: "!buzz birthday"
+**!buzz remove_birthday** - Removes your birthday set for this server. Example: "!buzz remove_birthday"

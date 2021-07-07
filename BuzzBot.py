@@ -287,7 +287,7 @@ async def set_birthday(ctx):
     incorrect_format_msg = 'You may have entered an incorrect format or an invalid date. ' \
                            'Example usage: "!b set_birthday 5/23" or "!b set_birthday may 23"'
 
-    # attempt to get the channel id of the user's mentioned channel
+    # check to see if the user entered a correct number of inputs to set a birthday
     if len(words) == 3:  # user entered an input such as "(prefix) set_birthday 3/14"
         month_and_day = words[2].split('/')
         if len(month_and_day) == 2:     # correct format for the month and day using a / character

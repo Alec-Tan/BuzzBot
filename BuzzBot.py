@@ -356,7 +356,7 @@ def write_birthday(file, user, guild, month, day):
 # checks to see if a given month and day are valid
 def date_is_valid(month, day):
     try:
-        test_date = datetime(2021, int(month), int(day))
+        test_date = datetime(2020, int(month), int(day))
         return True
     except ValueError:
         return False

@@ -1,11 +1,12 @@
 import discord
 import requests
 from discord.ext import commands, tasks
+from user_info import UserInfo
+from birthday_channel_info import BirthdayChannelInfo
+import database_functions as db
 from datetime import datetime
 
 help_file = 'help_message.txt'
-guilds_file = 'guilds.csv'
-users_file = 'users.csv'
 months_dict = {'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6, 'july': 7,
                'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12}
 saved_day = datetime.today().day    # used to check if the day has changed to check for birthdays
@@ -150,164 +151,137 @@ async def cat_breed(ctx):
 
 @bot.command()
 async def set_birthday_channel(ctx):
+    """
+    Command that allow a user to set a birthday channel for the current guild.
+
+    This channel is where birthday messages will be sent for this specific guild.
+    The user must mention the desired channel.
+    Example usage: "(prefix) set_birthday_channel #birthdays"
+
+    :param ctx: Represents the context in which a command is being invoked under.
+    """
+
     words = ctx.message.content.strip().split()
 
-    # attempt to get the channel id of the user's mentioned channel
     if len(words) == 3:  # user entered a correct number of inputs
         channel_list = ctx.message.channel_mentions
+
         if len(channel_list) == 0:  # user did not properly mention a channel
-            await ctx.reply('It looks like you did not mention a channel. Ex: "!buzz set_bday_channel '
+            await ctx.reply('It looks like you did not mention a channel. Ex: "!buzz set_birthday_channel '
                             '#birthday_channel"')
         else:   # user properly mentioned a channel
             bday_channel = channel_list[0]
             if type(bday_channel) == discord.TextChannel:
-                write_birthday_channel(guilds_file, ctx.guild, bday_channel)
-                await ctx.reply(f"Set {bday_channel.mention} as this server's birthday channel")
+                # attempt to insert the birthday channel's info into the database
+                bday_channel_info = BirthdayChannelInfo(bday_channel.guild.id, bday_channel.guild.name,
+                                                        bday_channel.id, bday_channel.name)
+                if db.insert_birthday_channel(bday_channel_info):
+                    await ctx.reply(f"Set {bday_channel.mention} as this server's birthday channel")
+                else:
+                    await ctx.reply("Something went wrong - failed to insert into the database")
             else:
                 await ctx.reply("It looks like the channel you mentioned is not a text channel")
-    elif len(words) == 2: # user only entered "(prefix) set_bday_channel"
-        await ctx.reply('Please mention a channel after the command. Ex: "!buzz set_bday_channel #birthday_channel"')
-
-
-# helper function for set_bday_channel
-# writes the guild name, guild id, bday channel name, and bday channel id to guilds_file (csv)
-def write_birthday_channel(file, guild, bday_channel):
-    guild_name = guild.name
-    guild_id = guild.id
-    bday_channel_name = bday_channel.name
-    bday_channel_id = bday_channel.id
-
-    # read guilds_file and put its lines in data. add next line character to header as well
-    try:
-        with open(file) as f:
-            data = f.readlines()
-            if len(data) > 0:
-                data[0] = data[0].strip() + '\n'    # add next line character to the header if it doesn't have it
-    except OSError as e:
-        print(e.strerror)
-        return
-
-    # check to see if the guild is already in guilds_file
-    guild_index = find_guild_index(data, guild_id)
-    # if the guild's id was found in guilds_file, edit the guild's info
-    if guild_index != -1:
-        found_guild = data[guild_index].strip().split(',')
-        found_guild[0] = guild_name
-        found_guild[2] = bday_channel_name
-        found_guild[3] = str(bday_channel_id)
-        data[guild_index] = ','.join(found_guild) + '\n'
-    else:   # if the guild does not already exist in guilds_file, need to add it as a new line
-        data.append(','.join([guild_name, str(guild_id), bday_channel_name, str(bday_channel_id)]) + '\n')
-
-    # write to new guilds_file
-    with open(file, 'w') as f:
-        f.writelines(data)     # no need to worry about new line characters since already added them
-
-
-# searches for a guild in a list of lines and returns the index. if the guild couldn't be found, returns -1
-def find_guild_index(lines_list, guild_id):
-    for i in range(len(lines_list)):
-        pieces = lines_list[i].strip().split(',')
-        if len(pieces) != 4:    # if the line has more or less values than it should
-            return -1
-        else:
-            if pieces[1] == str(guild_id):
-                return i
-    return -1
-
+    elif len(words) == 2:  # user only entered "(prefix) set_bday_channel"
+        await ctx.reply('Please mention a channel after the command.'
+                        'Ex: "!buzz set_birthday_channel #birthday_channel"')
 
 
 @bot.command()
 async def birthday_channel(ctx):
-    words = ctx.message.content.strip().split()
-    if len(words) > 2:  # if user message contains more than just "(prefix) bday_channel"
-        await ctx.reply('You may have entered too many arguments. Example usage: "!buzz bday_channel"')
-        return
-    else:   # read the guilds file to try to find the guild's birthday channel
-        try:
-            with open(guilds_file) as f:
-                data = f.readlines()
-        except OSError as e:
-            print(e.strerror)
-            return
+    """
+    Command that replies with the birthday channel currently set for the specific guild.
 
-        guild_index = find_guild_index(data, ctx.guild.id)
-        if guild_index != -1:    # guild was found in the guilds file
-            pieces = data[guild_index].strip().split(',')
-            bday_channel_id = pieces[3]
-            found_channel = bot.get_channel(int(bday_channel_id))
-            if found_channel is None:   # channel couldn't be found, was possibly deleted
-                await ctx.reply("This server does not have a birthday channel set")
-                return
-            await ctx.reply(f"The birthday channel is currently set to {found_channel.mention}")
-        else:   # guild was not found in guilds file
-            await ctx.reply("This server does not have a birthday channel set")
+    :param ctx: Represents the context in which a command is being invoked under.
+    """
+
+    words = ctx.message.content.strip().split()
+
+    # check to see if user message contains more than just "(prefix) birthday_channel"
+    if len(words) > 2:
+        await ctx.reply('You may have entered too many arguments. Example usage: "!buzz birthday_channel"')
+        return
+
+    # query the database to get the id of the guild's birthday channel if can be found,
+    birthday_channel_id = db.get_birthday_channel_id(ctx.guild.id)
+    if birthday_channel_id == -1:
+        await ctx.reply("This server does not have a birthday channel set")
+        return
+
+    # get the corresponding birthday channel
+    found_channel = bot.get_channel(birthday_channel_id)
+    if found_channel is None:   # channel couldn't be found, was possibly deleted
+        await ctx.reply("This server does not have a birthday channel set")
+        return
+
+    await ctx.reply(f"The birthday channel is currently set to {found_channel.mention}")
 
 
 @bot.command()
 async def remove_birthday_channel(ctx):
+    """
+    Command that deletes the birthday channel currently set for the specific guild.
+
+    :param ctx: Represents the context in which a command is being invoked under.
+    """
     words = ctx.message.content.strip().split()
-    if len(words) > 2:  # if user message contains more than just "(prefix) remove_bday_channel"
-        await ctx.reply('You may have entered too many arguments. Example usage: "!buzz remove_bday_channel"')
+
+    # check to see if user message contains more than just "(prefix) remove_birthday_channel"
+    if len(words) > 2:
+        await ctx.reply('You may have entered too many arguments. Example usage: "!buzz remove_birthday_channel"')
         return
-    else:   # read the guilds file to see if the guild already has a birthday channel set
-        try:
-            with open(guilds_file) as f:
-                data = f.readlines()
-        except OSError as e:
-            print(e.strerror)
-            return
 
-        guild_index = find_guild_index(data, ctx.guild.id)
-        if guild_index != -1:    # guild was found in the guilds file, remove from file
-            data.pop(guild_index)
-            with open(guilds_file, 'w') as f:
-                f.writelines(data)
-            await ctx.reply(f"Removed this server's birthday channel")
-        else:   # guild was not found in guilds file
-            await ctx.reply("This server does not have a birthday channel set")
+    # attempt to delete this guild's birthday channel
+    if db.delete_birthday_channel(ctx.guild.id):
+        await ctx.reply("Removed this server's birthday channel")
+    else:
+        await ctx.reply("This server does not have a birthday channel set")
 
-
-# searches for a user in a list of lines and returns the index. if the user couldn't be found, returns -1
-# the same user can be in the file multiple times if they are entered with different guilds
-def find_user_index(lines_list, user_id, guild_id):
-    for i in range(len(lines_list)):
-        pieces = lines_list[i].strip().split(',')
-        if len(pieces) != 6:    # if the line has more or less values than it should
-            return -1
-        else:
-            if pieces[1] == str(user_id) and pieces[3] == str(guild_id):
-                return i
-    return -1
 
 
 @bot.command()
 async def set_birthday(ctx):
+    """
+    Command that allows a user to set their birthday.
+
+    :param ctx: Represents the context in which a command is being invoked under.
+    """
+
     words = ctx.message.content.strip().split()
     incorrect_format_msg = 'You may have entered an incorrect format or an invalid date. ' \
                            'Example usage: "!b set_birthday 5/23" or "!b set_birthday may 23"'
 
     # check to see if the user entered a correct number of inputs to set a birthday
     if len(words) == 3:  # user entered an input such as "(prefix) set_birthday 3/14"
+        # check to see if the user entered a valid input for their birthday
         month_and_day = words[2].split('/')
-        if len(month_and_day) == 2:     # correct format for the month and day using a / character
-            if month_and_day[0].isdigit() and month_and_day[1].isdigit():   # if month and day are numbers
-                month = month_and_day[0]
-                day = month_and_day[1]
+        if len(month_and_day) == 2:  # correct format for the month and day using a / character
+            if month_and_day[0].isdigit() and month_and_day[1].isdigit():  # if month and day are numbers
+                month = int(month_and_day[0])
+                day = int(month_and_day[1])
                 if date_is_valid(month, day):
-                    write_birthday(users_file, ctx.author, ctx.guild, month, day)
-                    await ctx.reply(f'Set {words[2]} as your birthday.')
+                    # attempt to insert the user's birthday into the database
+                    user_info = UserInfo(ctx.author.id, ctx.author.name, ctx.guild.id, ctx.guild.name, month, day)
+                    if db.insert_birthday(user_info):
+                        await ctx.reply(f'Set {words[2]} as your birthday.')
+                    else:
+                        await ctx.reply('Something went wrong - failed to insert into the database')
                     return
         # if user's input of month and date were not in an expected format
         await ctx.reply(incorrect_format_msg)
     elif len(words) == 4:    # user entered an input such as "(prefix) set_birthday march 14"
+        # check to see if the user entered a valid input for their birthday
         if words[2].lower() in months_dict and words[3].isdigit():  # if user entered correct month and a digit for day
             month = months_dict[words[2].lower()]
             day = int(words[3])
             if date_is_valid(month, day):
-                write_birthday(users_file, ctx.author, ctx.guild, month, day)
-                await ctx.reply(f'Set {months_dict[words[2].lower()]}/{words[3]} as your birthday.')
+                # attempt to insert the user's birthday into the database
+                user_info = UserInfo(ctx.author.id, ctx.author.name, ctx.guild.id, ctx.guild.name, month, day)
+                if db.insert_birthday(user_info):
+                    await ctx.reply(f'Set {month}/{day} as your birthday.')
+                else:
+                    await ctx.reply('Something went wrong - failed to insert into the database')
                 return
+
         # if user's input of month and date were not in an expected format
         await ctx.reply(incorrect_format_msg)
     elif len(words) == 2:  # user only entered "(prefix) set_birthday"
@@ -315,42 +289,6 @@ async def set_birthday(ctx):
     else:   # user entered too many arguments
         await ctx.reply('You may have entered too many arguments. Example usage:'
                         ' "!b set_birthday 5/23" or "!b set_birthday may 23""')
-
-
-# helper function for set_birthday(). writes
-def write_birthday(file, user, guild, month, day):
-    user_name = user.name
-    user_id = user.id
-    guild_name = guild.name
-    guild_id = guild.id
-
-    # read users_file and put its lines in data. add next line character to header as well
-    try:
-        with open(file) as f:
-            data = f.readlines()
-            if len(data) > 0:
-                data[0] = data[0].strip() + '\n'  # add next line character to the header if it doesn't have it
-    except OSError as e:
-        print(e.strerror)
-        return
-
-    # check to see if the user is already in users_file
-    user_index = find_user_index(data, user_id, guild_id)
-    # if the user's id was found in users_file, edit the guild's info
-    if user_index != -1:
-        found_user = data[user_index].strip().split(',')
-        found_user[0] = user_name
-        found_user[2] = guild_name
-        found_user[3] = str(guild_id)
-        found_user[4] = str(month)
-        found_user[5] = str(day)
-        data[user_index] = ','.join(found_user) + '\n'
-    else:  # if the user does not already exist in users_file, need to add it as a new line
-        data.append(','.join([user_name, str(user_id), guild_name, str(guild_id), str(month), str(day)]) + '\n')
-
-    # write to new users_file
-    with open(file, 'w') as f:
-        f.writelines(data)  # no need to worry about new line characters since already added them
 
 
 # checks to see if a given month and day are valid

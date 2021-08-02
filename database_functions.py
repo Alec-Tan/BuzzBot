@@ -1,5 +1,5 @@
 import psycopg2
-
+from datetime import datetime
 
 host = None
 database = None
@@ -115,8 +115,12 @@ def insert_birthday(user_info_class):
     with conn:
         with conn.cursor() as cur:
             cur.execute(query)
+            rows_inserted = cur.rowcount
     close_connection(conn)
-    return True
+
+    if rows_inserted > 0:
+        return True
+    return False
 
 
 def delete_birthday(user_id, guild_id):
@@ -214,8 +218,12 @@ def insert_birthday_channel(chan_info_class):
     with conn:
         with conn.cursor() as cur:
             cur.execute(query)
+            rows_inserted = cur.rowcount
     close_connection(conn)
-    return True
+
+    if rows_inserted > 0:
+        return True
+    return False
 
 
 def delete_birthday_channel(guild_id):
@@ -267,7 +275,7 @@ def get_birthday_channel_id(guild_id):
     query = f"""
             SELECT {bday_channel_id_column}
             FROM {birthday_channels_table_name}
-            WHERE {guild_id_column} = {guild_id}
+            WHERE {guild_id_column} = {guild_id};
             """
 
     with conn:
@@ -279,3 +287,35 @@ def get_birthday_channel_id(guild_id):
     if channel_id is None:
         return -1
     return channel_id[0]
+
+
+def get_birthdays_today():
+    """
+    Fetches the user id and birthday channel id of each user that has a birthday today.
+
+    The birthday channel id is used to send a birthday message to the user.
+
+    Returns:
+    list of tuples: Each tuple contains (user_id, birthday_channel_id). List will be empty if no birthdays today.
+    """
+
+    conn = create_connection()
+    if conn is None:
+        return []
+
+    today = datetime.today()
+    query = f"""
+            SELECT {user_id_column}, {bday_channel_id_column}
+            FROM {birthdays_table_name}
+            INNER JOIN {birthday_channels_table_name}
+            ON {birthdays_table_name}.{guild_id_column} = {birthday_channels_table_name}.{guild_id_column}
+            WHERE {month_column} = {today.month} AND {day_column} = {today.day};
+            """
+
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(query)
+            birthdays_list = cur.fetchall()
+    close_connection(conn)
+
+    return birthdays_list

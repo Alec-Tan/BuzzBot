@@ -23,7 +23,12 @@ bday_channel_name_column = 'birthday_channel_name'
 
 
 def create_connection():
-    """Creates and returns a connection to the database."""
+    """
+    Creates and returns a connection to the database.
+
+    :return: A new database connection or None if unsuccessful.
+    """
+
     try:
         conn = psycopg2.connect(
             host=host,
@@ -38,7 +43,12 @@ def create_connection():
 
 
 def close_connection(conn):
-    """Closes the connection to the database."""
+    """
+    Closes the connection to the database.
+
+    :param conn: A connection to a database.
+    """
+
     if conn is not None:
         conn.close()
 
@@ -54,7 +64,7 @@ def create_tables():
     if conn is None:
         return
 
-    # query to create the table that holds birthdays
+    # Query to create the table that holds birthdays.
     query = f"""
             CREATE TABLE IF NOT EXISTS {birthdays_table_name} ( 
                 {user_id_column} BIGINT,
@@ -66,7 +76,7 @@ def create_tables():
                 PRIMARY KEY({user_id_column}, {guild_id_column})
             );
             """
-    # query to create the table that holds birthday channels
+    # Query to create the table that holds birthday channels.
     query += f"""
             CREATE TABLE IF NOT EXISTS {birthday_channels_table_name} (
                 {guild_id_column} BIGINT,
@@ -87,18 +97,15 @@ def insert_birthday(user_info_class):
     """
     Inserts a user and their birthday into the birthdays table.
 
-    Parameters:
-    user_info_class (UserInfo): Contains info such as user id, guild id, and birthday.
-
-    Returns:
-    bool: True if successfully inserted, false otherwise.
+    :param UserInfo user_info_class: Contains info such as user id, guild id, and birthday.
+    :return: bool that is True if successfully inserted, false otherwise.
     """
 
     conn = create_connection()
     if conn is None:
         return False
 
-    # query to insert a user's info into the table. if they are already in the table, update their name and birthday
+    # Query to insert a user's info into the table. If they are already in the table, update their name and birthday.
     query = f"""
             INSERT INTO {birthdays_table_name}
             VALUES ({user_info_class.user_id}, '{user_info_class.user_name}', {user_info_class.guild_id},
@@ -127,12 +134,9 @@ def delete_birthday(user_id, guild_id):
     """
     Deletes a user and their birthday from the birthdays table if they can be found.
 
-    Parameters:
-    user_id (int): the user's discord id.
-    guild_id (int): the id of the user's guild.
-
-    Returns:
-    bool: True if successfully deleted, false otherwise.
+    :param int user_id: the user's discord id.
+    :param int guild_id: the id of the user's guild.
+    :return: bool that is True if successfully deleted, False otherwise.
     """
 
     conn = create_connection()
@@ -159,12 +163,9 @@ def get_birthday(user_id, guild_id):
     """
     Fetches a user's info from the birthday table.
 
-    Parameters:
-    user_id (int): the user's discord id.
-    guild_id (int): the id of the user's guild.
-
-    Returns:
-    tuple: Contains (month, day) of user's birthday. If not found, returns (-1, -1).
+    :param int user_id: the user's discord id.
+    :param int guild_id: the id of the user's guild.
+    :return: tuple that contains (month, day) of user's birthday. If not found, returns (-1, -1).
     """
 
     conn = create_connection()
@@ -192,11 +193,8 @@ def insert_birthday_channel(chan_info_class):
     """
     Inserts a birthday channel into the birthday channels table.
 
-    Parameters:
-    chan_info_class (BirthdayChannelInfo): Contains info such as guild id and birthday channel id.
-
-    Returns:
-    bool: True if successfully inserted, false otherwise.
+    :param BirthdayChannelInfo chan_info_class: Contains info such as guild id and birthday channel id.
+    :return: bool that is True if successfully inserted, False otherwise.
     """
 
     conn = create_connection()
@@ -230,11 +228,8 @@ def delete_birthday_channel(guild_id):
     """
     Deletes the birthday channel of a guild from the birthday channels table.
 
-    Parameters:
-    guild_id (int): The id of the guild of the birthday channel to be deleted.
-
-    Returns:
-    bool: True if successfully deleted, false otherwise.
+    :param int guild_id: the id of the guild of the birthday channel to be deleted.
+    :return: bool that is True if successfully deleted, False otherwise.
     """
 
     conn = create_connection()
@@ -261,11 +256,8 @@ def get_birthday_channel_id(guild_id):
     """
     Fetches the id of the birthday channel of a guild from the birthday channels table.
 
-    Parameters:
-    guild_id (int): The id of the guild of the birthday channel to be searched for.
-
-    Returns:
-    int: The birthday channel's id. Returns -1 if not found.
+    :param int guild_id: The id of the guild of the birthday channel to be searched for.
+    :return: int that represents the birthday channel's id. Returns -1 if not found.
     """
 
     conn = create_connection()
@@ -293,10 +285,8 @@ def get_birthdays_today():
     """
     Fetches the user id and birthday channel id of each user that has a birthday today.
 
-    The birthday channel id is used to send a birthday message to the user.
-
-    Returns:
-    list of tuples: Each tuple contains (user_id, birthday_channel_id). List will be empty if no birthdays today.
+    :return: List of tuples: Each tuple contains (user_id, birthday_channel_id).
+             List will be empty if there are no birthdays today.
     """
 
     conn = create_connection()
@@ -304,6 +294,8 @@ def get_birthdays_today():
         return []
 
     today = datetime.today()
+
+    # Query to get all user ids and channel ids for users that have a birthday today.
     query = f"""
             SELECT {user_id_column}, {bday_channel_id_column}
             FROM {birthdays_table_name}

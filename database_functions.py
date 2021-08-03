@@ -8,8 +8,8 @@ password = None
 port = None
 
 # names for the tables
-birthdays_table_name = 'birthdays'
-birthday_channels_table_name = 'birthday_channels'
+birthdays_table = 'birthdays'
+birthday_channels_table = 'birthday_channels'
 
 # names for the columns of the tables
 user_id_column = 'user_id'
@@ -66,7 +66,7 @@ def create_tables():
 
     # Query to create the table that holds birthdays.
     query = f"""
-            CREATE TABLE IF NOT EXISTS {birthdays_table_name} ( 
+            CREATE TABLE IF NOT EXISTS {birthdays_table} ( 
                 {user_id_column} BIGINT,
                 {user_name_column} VARCHAR(50),
                 {guild_id_column} BIGINT,
@@ -78,7 +78,7 @@ def create_tables():
             """
     # Query to create the table that holds birthday channels.
     query += f"""
-            CREATE TABLE IF NOT EXISTS {birthday_channels_table_name} (
+            CREATE TABLE IF NOT EXISTS {birthday_channels_table} (
                 {guild_id_column} BIGINT,
                 {guild_name_column} VARCHAR(50),
                 {bday_channel_id_column} BIGINT,
@@ -107,7 +107,7 @@ def insert_birthday(user_info_class):
 
     # Query to insert a user's info into the table. If they are already in the table, update their name and birthday.
     query = f"""
-            INSERT INTO {birthdays_table_name}
+            INSERT INTO {birthdays_table}
             VALUES ({user_info_class.user_id}, '{user_info_class.user_name}', {user_info_class.guild_id},
                     '{user_info_class.guild_name}', {user_info_class.month}, {user_info_class.day})
             ON CONFLICT ({user_id_column}, {guild_id_column})
@@ -144,7 +144,7 @@ def delete_birthday(user_id, guild_id):
         return False
 
     query = f"""
-            DELETE FROM {birthdays_table_name}
+            DELETE FROM {birthdays_table}
             WHERE {user_id_column} = {user_id} AND {guild_id_column} = {guild_id};
             """
 
@@ -174,7 +174,7 @@ def get_birthday(user_id, guild_id):
 
     query = f"""
             SELECT {month_column}, {day_column}
-            FROM {birthdays_table_name}
+            FROM {birthdays_table}
             WHERE {user_id_column} = {user_id} AND {guild_id_column} = {guild_id};
             """
 
@@ -202,7 +202,7 @@ def insert_birthday_channel(chan_info_class):
         return False
 
     query = f"""
-            INSERT INTO {birthday_channels_table_name}
+            INSERT INTO {birthday_channels_table}
             VALUES ({chan_info_class.guild_id}, '{chan_info_class.guild_name}', {chan_info_class.birthday_channel_id},
                     '{chan_info_class.birthday_channel_name}')
             ON CONFLICT ({guild_id_column})
@@ -237,7 +237,7 @@ def delete_birthday_channel(guild_id):
         return False
 
     query = f"""
-            DELETE FROM {birthday_channels_table_name}
+            DELETE FROM {birthday_channels_table}
             WHERE {guild_id_column} = {guild_id};
             """
 
@@ -266,7 +266,7 @@ def get_birthday_channel_id(guild_id):
 
     query = f"""
             SELECT {bday_channel_id_column}
-            FROM {birthday_channels_table_name}
+            FROM {birthday_channels_table}
             WHERE {guild_id_column} = {guild_id};
             """
 
@@ -298,9 +298,9 @@ def get_birthdays_today():
     # Query to get all user ids and channel ids for users that have a birthday today.
     query = f"""
             SELECT {user_id_column}, {bday_channel_id_column}
-            FROM {birthdays_table_name}
-            INNER JOIN {birthday_channels_table_name}
-            ON {birthdays_table_name}.{guild_id_column} = {birthday_channels_table_name}.{guild_id_column}
+            FROM {birthdays_table}
+            INNER JOIN {birthday_channels_table}
+            ON {birthdays_table}.{guild_id_column} = {birthday_channels_table}.{guild_id_column}
             WHERE {month_column} = {today.month} AND {day_column} = {today.day};
             """
 

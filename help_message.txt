@@ -1,4 +1,5 @@
-BuzzBot can use two prefixes: "!buzz" and "!b" 
+BuzzBot can use two prefixes: "!buzz" and "!b"
+
 **!b help** - Sends this help message 
 **!b emote X** - Use to search for and send X emote from FrankerFaceZ. This does not support gif emotes. Example: "!b emote YEP" 
 **!b dog** - Sends an image of a random dog. Example: "!b dog"

@@ -26,10 +26,16 @@ async def on_ready():
 @bot.command()
 async def help(ctx):
     """Command that sends a help message displaying all of the bot's commands."""
+    embed = discord.Embed(
+        title="Commands",
+        color=discord.Colour.gold()
+    )
+
     try:
         with open(help_file) as f:
             help_message = f.read()
-            await ctx.send(help_message)
+            embed.description = help_message
+            await ctx.send(embed=embed)
     except OSError as e:
         print(e.strerror)
 

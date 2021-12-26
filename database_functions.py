@@ -1,11 +1,15 @@
 import psycopg2
 from datetime import datetime
+import os
+from dotenv import load_dotenv
 
-host = None
-database = None
-user = None
-password = None
-port = None
+load_dotenv()
+
+HOST = os.environ.get('DB_HOST')
+DATABASE = os.environ.get('DATABASE')
+USER = os.environ.get('DB_USER')
+PASSWORD = os.environ.get('DB_PASSWORD')
+PORT = os.environ.get('DB_PORT')
 
 # names for the tables
 birthdays_table = 'birthdays'
@@ -31,11 +35,11 @@ def create_connection():
 
     try:
         conn = psycopg2.connect(
-            host=host,
-            database=database,
-            port=port,
-            user=user,
-            password=password
+            host=HOST,
+            database=DATABASE,
+            port=PORT,
+            user=USER,
+            password=PASSWORD
         )
         return conn
     except (Exception, psycopg2.DatabaseError) as error:

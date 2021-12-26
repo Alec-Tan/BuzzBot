@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 import discord
 import requests
 from discord.ext import commands, tasks
@@ -6,7 +8,9 @@ from birthday_channel_info import BirthdayChannelInfo
 import database_functions as db
 from datetime import datetime
 
-BOT_TOKEN = ''
+load_dotenv()
+
+BOT_TOKEN = os.environ.get('BOT_TOKEN')
 help_file = 'help_message.txt'
 months_dict = {'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6, 'july': 7,
                'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12}

@@ -431,6 +431,6 @@ async def check_for_birthdays():
             if channel.permissions_for(channel.guild.me).send_messages:
                 await channel.send(f'Happy birthday {user.mention}!')
 
-
+db.create_tables()  # create the database tables if they do not exist
 check_for_birthdays.start()
 bot.run(BOT_TOKEN)
